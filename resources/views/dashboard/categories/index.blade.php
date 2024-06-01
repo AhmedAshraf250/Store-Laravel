@@ -8,19 +8,14 @@
 @endsection
 
 @section('content')
-    <a href="{{ route('dashboard.categories.create') }}" class=" mb-5 btn btn-group-lg btn-outline-primary">Create
-        Category</a>
+    <a href="{{ route('dashboard.categories.create') }}" class=" mb-5 btn btn-group-lg btn-outline-primary">
+        Create Category
+    </a>
 
-    @if (session()->has('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-    @if (session()->has('info'))
-        <div class="alert alert-info">
-            {{ session('info') }}
-        </div>
-    @endif
+
+    <x-alert type="success" />
+    <x-alert type="info" />
+
     <table class="table">
         <thead>
             <tr>

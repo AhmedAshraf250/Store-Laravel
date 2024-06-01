@@ -38,7 +38,9 @@ class CategoryRequest extends FormRequest
         // $this->route('categories'); => return 11 //
         // ---------- http://localhost:8000/dashboard/categories/11/edit
 
-        $id = $this->route('categories');
+        // look "> php artisan route:list"    // i get the "parameter name" form url [dashboard/categories/{category}]
+        $id = $this->route('category');
+
         // فى مودل الكاتيجورى عرفنا بداخله هذه الميثود "رولز" وبتحتاج بداخلها اجريومينت, طب كيف امرر هذا الاجريومنت لها ؟ .. بالاعلى
         return Category::rules($id);
     }

@@ -19,7 +19,7 @@
  *
  *     > php artisan route:list   // {very importat to know all application routes and their names}
  *
- *     > php artisan storage:link
+ *     > php artisan storage:link  // look 'config\filesystems.php'->['links']
  *
  *     > composer dump-autoload
  *
@@ -27,7 +27,14 @@
  *
  *     > php artisan make:rule Filter
  *
+ *     > php artisan make:component alert --view
+ *     > php artisan make:component form.input --view  // 'resources\views\components\form\input.blade.php'
+ *     > php artisan make:component Nav          // "Full Component" ->  look: 'app\View\Components\Nav.php' & 'resources\views\components\nav.blade.php'
+ *
  */
+
+use Illuminate\Support\Facades\Auth;
+
 ?>
 
 <?php
