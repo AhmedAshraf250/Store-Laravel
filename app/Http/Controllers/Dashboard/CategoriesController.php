@@ -21,9 +21,19 @@ class CategoriesController extends Controller
      */
     public function index()
     {
-        $categories = Category::all(); // return Collection Object
-        $parents = $categories->pluck('name', 'id')->toArray();
+        $request = request(); // return request object from service container
+        $query = Category::query(); // "select * from `categories`"  // بترجع الكويرى-بيلدر تبع هذا المودل
 
+        if ($name = $request->query('name')) { // النايم هنا اساين وليست كومباريشن
+            $query->where('name', 'LIKE', "%{$name}%");
+        }
+        if ($status = $request->query('status')) {
+            $query->where('status', '=', $status); // === $query->wherestatus($status);
+        }
+        // $categories = Category::simplePaginate(1); // « Previous || Next »
+        $categories = $query->Paginate(2); // return Collection Object
+        $parents = Category::all()->pluck('name', 'id')->toArray();
+        // dd($parents);
         return view('dashboard.categories.index', compact('categories', 'parents'));
     }
 
