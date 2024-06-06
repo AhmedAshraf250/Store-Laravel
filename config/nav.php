@@ -4,9 +4,9 @@
 return [
     [
         'icon' => 'nav-icon fas fa-tachometer-alt',
-        'route' => 'dashboard.',
+        'route' => 'dashboard.dashboard',
         'title' => 'Dashboard',
-        'active' => 'dashboard.'
+        'active' => 'dashboard.dashboard'
     ],
     [
         'icon' => 'nav-icon fas fa-th',
@@ -23,7 +23,7 @@ return [
     ],
     [
         'icon' => 'nav-icon fas fa-columns',
-        'route' => 'dashboard.categories.index',
+        'route' => 'dashboard.products.index',
         'title' => 'Products',
         'active' => 'dashboard.products.*'
     ],

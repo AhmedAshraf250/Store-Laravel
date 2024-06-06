@@ -15,16 +15,15 @@
 
 {{-- Category Name Field --}}
 <div class="form-group">
-    <x-form.input label="Category Name" class="form-control form-control-lg" type="text"
-        name="name" :value="$category->name ?? ''" />
+    <x-form.input label="Category Name" class="form-control form-control-lg" type="text" name="name"
+        :value="$category->name ?? ''" />
 </div>
 
 
 {{-- Select Field --}}
 <div class="form-group form-select">
     <label for="">Category Parent</label>
-    <select class="form-control @error('parent_id') is-invalid @enderror" name="parent_id"
-        id="">
+    <select class="form-control @error('parent_id') is-invalid @enderror" name="parent_id" id="">
         <option value="">As a Master Parent</option>
         @foreach ($cate_parents as $parent)
             <option value="{{ old('parent_id', $parent->id ?? '') }}"
@@ -48,8 +47,7 @@
 {{-- Image Upload 'FILE' Field --}}
 <div class="form-group">
     <x-form.label id="image">Upload image</x-form.label>
-    <x-form.input {{-- label="Upload image" --}} class="form-control-file" type="file" name="image"
-        accept="image/*" />
+    <x-form.input {{-- label="Upload image" --}} class="form-control-file" type="file" name="image" accept="image/*" />
 </div>
 
 <div class="form-group">
@@ -72,6 +70,5 @@
 
 {{-- SUBMIT --}}
 <div class="form-group">
-    <button class=" form-control btn btn-success" type="submit"
-        id="">{{ $button_label ?? 'Save' }}</button>
+    <button class=" form-control btn btn-success" type="submit" id="">{{ $button_label ?? 'Save' }}</button>
 </div>

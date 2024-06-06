@@ -32,6 +32,13 @@
  *     > php artisan make:component Nav          // "Full Component" ->  look: 'app\View\Components\Nav.php' & 'resources\views\components\nav.blade.php'
  *
  *     > php artisan vendor:publish --tag=laravel-pagination // to make modifications on default pagination styles // LOOK: 'resources\views\vendor\pagination'Folder
+ *
+ *     > php artisan make:migration add_softDeletes_to_categories_table
+ *
+ *     > php artisan make:scope ProductScope
+ *
+ *
+ *
  */
 
 use Illuminate\Support\Facades\Auth;

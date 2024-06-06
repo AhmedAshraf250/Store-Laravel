@@ -8,9 +8,11 @@
 @endsection
 
 @section('content')
-    <a href="{{ route('dashboard.categories.create') }}"
-        class=" mb-5 btn btn-group-lg btn-outline-primary">
+    <a href="{{ route('dashboard.categories.create') }}" class=" mb-5 btn btn-group-lg btn-outline-primary">
         Create Category
+    </a>
+    <a href="{{ route('dashboard.categories.trash') }}" class=" mb-5 btn btn-group-lg btn-outline-info">
+        Trash
     </a>
 
 
@@ -79,7 +81,9 @@
                     </td>
                     <td>{{ $category->id }}</td>
                     <td>{{ $category->name }}</td>
-                    <td>{{ $category->parent_id ? $parents[$category->parent_id] : 'Praimary Parent' }}
+                    <td>
+                        {{-- {{ $category->parent_id ? $parents[$category->parent_id] : 'Praimary Parent' }} --}}
+                        {{ $category->parent_name ?? 'Praimary Parent' }}
                     </td>
                     <td>{{ $category->status }}</td>
                     <td>{{ $category->created_at }}</td>
@@ -88,8 +92,7 @@
                             class="btn btn-sm btn-outline-success">Edit</a>
                     </td>
                     <td>
-                        <form action="{{ route('dashboard.categories.destroy', $category->id) }}"
-                            method="post">
+                        <form action="{{ route('dashboard.categories.destroy', $category->id) }}" method="post">
                             @csrf
                             @method('delete')
                             {{--                        <input type="hidden" name="_method" value="delete"> --}}
@@ -99,7 +102,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7"> No Categories Defined</td>
+                    <td colspan="8"> No Categories Defined</td>
                 </tr>
             @endforelse
         </tbody>

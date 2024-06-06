@@ -3,13 +3,15 @@
 namespace App\Models;
 
 use App\Rules\Filter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\Rule;
 
 class Category extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     // white list
     protected $fillable = ['name', 'slug', 'parent_id', 'image', 'description', 'status'];
@@ -67,5 +69,33 @@ class Category extends Model
             'image' => ['image', 'max:1047576', 'dimensions:min_width=100,min_height=100', 'mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg+xml'],
             'status' => 'in:active,archived'
         ];
+    }
+    //الاسكوب فكرتها ان لو محتاج انى اطبق اى شئ معين وله علاقة بجملة الاس-كيو-ال
+    // عند تعريف الاسكوب لازم يبدأ او يكون له بداية بريفكس اسمها اسكوب وعند استدعائه يكون بالاسم اللى بعد "إسكوب"ا
+    // الاسكوب دائما بيرجع "بيلدر" اوبجيكت حتى لو ما عرفته او عملت له ديفناشن داخل باراميترز الاسكوب, لكن طبعا يفضل ان يتم تعريفه
+    // \Illuminate\Database\Query\Builder (Scopes always returns Builder Object, Even if I don't pass it on or define it)
+
+    // ضفت اسم الجدول قبل كل اسم كولوم عشان لو استخدم جملة جوين قبل الاسكوب, تجنبا لبعض الكونفلكتات الغير متوقعه
+    public function scopeActive(Builder $builder)
+    {
+        $builder->where('categories.status', 'active');
+        // Category::active(); // to call and apply it
+    }
+
+    public function scopeStatus(Builder $builder, $status) // Dynamic Scope
+    {
+        $builder->where('categories.status', $status);
+        // Category::status('active'); // to call and apply it
+    }
+
+    public function scopeFilter(Builder $builder, $filters)
+    {
+        if ($name = $filters['name'] ?? false) { // النايم هنا اساين وليست كومباريشن
+            $builder->where('categories.name', 'LIKE', "%{$name}%");
+        }
+        if ($status = $filters['status'] ?? false) {
+            $builder->where('categories.status', '=', $status);
+        }
+        // $categories = Category::filter(request()->query())->Paginate(2); // example in controller
     }
 }

@@ -22,19 +22,30 @@ class CategoriesController extends Controller
     public function index()
     {
         $request = request(); // return request object from service container
-        $query = Category::query(); // "select * from `categories`"  // بترجع الكويرى-بيلدر تبع هذا المودل
 
-        if ($name = $request->query('name')) { // النايم هنا اساين وليست كومباريشن
-            $query->where('name', 'LIKE', "%{$name}%");
-        }
-        if ($status = $request->query('status')) {
-            $query->where('status', '=', $status); // === $query->wherestatus($status);
-        }
+        // $query = Category::query(); // "select * from `categories`"  // بترجع الكويرى-بيلدر تبع هذا المودل
+        // if ($name = $request->query('name')) { // النايم هنا اساين وليست كومباريشن
+        //     $query->where('name', 'LIKE', "%{$name}%");
+        // }
+        // if ($status = $request->query('status')) {
+        //     $query->where('status', '=', $status); // === $query->wherestatus($status);
+        // }
+
+
+        // SELECT a.*, parents.name AS parent_name FROM `categories` As `a` LEFT JOIN `categories` AS `parents` ON parents.id = a.parent_id
+        // استخدمت هنا "الليفت-جوين" بدل "الانر-جوين" لان الانر بترجع بيانات فقط فى حالة ان الجدولين بهم ريكورد, وتستثنى نتائج "النل" وهنا فى هذه الحالة يوجد كاتيجوريز البارينت خاصتها قيمته "نل" هنا ومع "الانر" سوف يتم استثنائه
+        // اما "الليفت" سوف تقوم بإرجاع كل الجدل الاول "جدولنا الاساسى" سواء يقابله قيمة فى الجدول الثانى او لا ولا تستثنى النل
+        // اما لو كان جدولنا الاساسى هو الثانى نستخدم ال "الرايت"ك
+        $categories = Category::leftJoin('categories As parents', 'parents.id', '=', 'categories.parent_id')
+            ->select(['categories.*', 'parents.name AS parent_name'])
+            ->filter(request()->query())
+            ->orderBy('categories.name')
+            ->Paginate(2); // return Collection Object
         // $categories = Category::simplePaginate(1); // « Previous || Next »
-        $categories = $query->Paginate(2); // return Collection Object
-        $parents = Category::all()->pluck('name', 'id')->toArray();
-        // dd($parents);
-        return view('dashboard.categories.index', compact('categories', 'parents'));
+
+        // $parents = Category::all()->pluck('name', 'id')->toArray();
+
+        return view('dashboard.categories.index', compact('categories'/* , 'parents' */));
     }
 
     /**
@@ -226,9 +237,9 @@ class CategoriesController extends Controller
         $category = Category::findorfail($id);
         $category->delete(); // make sure category already deleted first (category obj It still keeps the data inside it )
         // sometimes unexpected errors is returned when handling with sql query
-        if ($category->image) {
-            Storage::disk('public')->delete($category->image);
-        }
+        // if ($category->image) {
+        //     Storage::disk('public')->delete($category->image);
+        // }
 
         // Category::where('id', '<>', $id)->delete();
         // Category::destroy($id); // $id refer to primary key of that model
@@ -245,5 +256,31 @@ class CategoriesController extends Controller
         $path = $file->store('uploads', ['disk' => 'public']);
         return $path;
 
+    }
+
+    public function trash()
+    {
+
+        $categories = Category::onlyTrashed()->paginate();
+        return view('dashboard.categories.trash', compact('categories'));
+    }
+    public function restore(Request $request, $id)
+    {
+        $categories = Category::onlyTrashed()->findOrFail($id);
+        $categories->restore();
+        return redirect()
+            ->route('dashboard.categories.trash')
+            ->with('success', 'Categories restored successfully');
+    }
+    public function forceDelete($id)
+    {
+        $categories = Category::onlyTrashed()->findOrFail($id);
+        // $categories->forceDelete();
+        if ($categories->forceDelete()) {
+            Storage::disk('public')->delete($categories);
+        }
+        return redirect()
+            ->route('dashboard.categories.trash')
+            ->with('success', 'Categories deleted forever');
     }
 }
