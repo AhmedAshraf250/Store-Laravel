@@ -9,8 +9,6 @@ class Nav extends Component
 {
     // Class-based components allow you to define both the template and the behavior of the component in a class.
 
-    // البروبيرتى أيتيمس بدل اسكوبها بابليك هنا يبقى هتكون بطبيعة الحال متضمنه تلقائيا فى ملف الفيو اللى فى ميثود الريندر
-    // اما لو بروتيكتيد فأكيد لازم نمررها ونضمنها يديويا داخل ملف الفيو هذا
     public $items;
     public $active;
 

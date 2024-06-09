@@ -37,6 +37,7 @@
  *
  *     > php artisan make:scope ProductScope
  *
+ *     > composer require symfony/intl
  *
  *
  */

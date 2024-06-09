@@ -23,29 +23,24 @@ class CategoriesController extends Controller
     {
         $request = request(); // return request object from service container
 
-        // $query = Category::query(); // "select * from `categories`"  // بترجع الكويرى-بيلدر تبع هذا المودل
-        // if ($name = $request->query('name')) { // النايم هنا اساين وليست كومباريشن
-        //     $query->where('name', 'LIKE', "%{$name}%");
-        // }
-        // if ($status = $request->query('status')) {
-        //     $query->where('status', '=', $status); // === $query->wherestatus($status);
-        // }
+        $categories = Category::with('parent')
 
+            // SELECT a.*, parents.name AS parent_name FROM `categories` As `a` LEFT JOIN `categories` AS `parents` ON parents.id = a.parent_id
+            /* leftJoin('categories As parents', 'parents.id', '=', 'categories.parent_id')
+                ->select(['categories.*', 'parents.name AS parent_name']) */
 
-        // SELECT a.*, parents.name AS parent_name FROM `categories` As `a` LEFT JOIN `categories` AS `parents` ON parents.id = a.parent_id
-        // استخدمت هنا "الليفت-جوين" بدل "الانر-جوين" لان الانر بترجع بيانات فقط فى حالة ان الجدولين بهم ريكورد, وتستثنى نتائج "النل" وهنا فى هذه الحالة يوجد كاتيجوريز البارينت خاصتها قيمته "نل" هنا ومع "الانر" سوف يتم استثنائه
-        // اما "الليفت" سوف تقوم بإرجاع كل الجدل الاول "جدولنا الاساسى" سواء يقابله قيمة فى الجدول الثانى او لا ولا تستثنى النل
-        // اما لو كان جدولنا الاساسى هو الثانى نستخدم ال "الرايت"ك
-        $categories = Category::leftJoin('categories As parents', 'parents.id', '=', 'categories.parent_id')
-            ->select(['categories.*', 'parents.name AS parent_name'])
+            // "select `categories`.*, (select count(*) from `products` where `categories`.`id` = `products`.`category_id` and `status` = ?) as `products_count` from `categories` where `categories`.`deleted_at` is null order by `categories`.`name` asc"
+            ->withCount([
+                'products' => function ($query) {
+                    $query->where('status', '=', 'active')->withoutGlobalScope('store');
+                }
+            ])  // == [->select('categories.*')->selectRaw('(SELECT COUNT(*) FROM products WHERE category_id = categories.id and status = ?) as products_count')]
             ->filter(request()->query())
             ->orderBy('categories.name')
-            ->Paginate(2); // return Collection Object
+            ->paginate(); // return Collection Object
         // $categories = Category::simplePaginate(1); // « Previous || Next »
 
-        // $parents = Category::all()->pluck('name', 'id')->toArray();
-
-        return view('dashboard.categories.index', compact('categories'/* , 'parents' */));
+        return view('dashboard.categories.index', compact('categories'));
     }
 
     /**
@@ -57,58 +52,39 @@ class CategoriesController extends Controller
     public function store(Request $request)
     {
 
-        // عندما يحدث خطأ في رول او قاعدة ما داخل ميثود "فاليدات" في لارافيل، يحدث السيناريو التالي
-        /**
-         * # التأكد من صحة البيانات:ك
-         *    - عند استدعاء ميثود فاليدات يقوم لارافيل بمراجعة البيانات المدخلة وفقًا للقواعد المحددة
-         *   - إذا كانت البيانات المدخلة لا تتوافق مع إحدى القواعد، يعتبر ذلك خطأ في التحقق
-         * # التعامل مع الأخطاء:ك
-         *    - عند حدوث خطأ في التحقق، يتم توليد استثناء من نوع
-         *            - ValidationException
-         *    - يتم القبض على هذا الاستثناء تلقائيًا بواسطة نظام لارافيل
-         * # إعادة التوجيه:ك
-         *    - يتم إعادة توجيه المستخدم تلقائيًا إلى الصفحة السابقة
-         *    - اللارافيل هترجعنى للصفحة السابقة مع حاجه اسمها "ويز انبتس", ودا يعنى ان اللارافيل راح تخزن الإنبت الحالى فى السيشن كافلاش, اى بشكل مؤقت فقط للنكست ريكوست بحيث نحصل على هذه القيم لو احتاجنها او للحفاظ على القيم التى ادخلها المستخدم فى الفورم
-         *    - يتم تضمين بيانات الإدخال الأصلية في الجلسة بحيث يمكن إعادة تعبئة النموذج بنفس البيانات التي أدخلها المستخدم (باستثناء الحقول من نوع الملف)
-         * # عرض الأخطاء:ك
-         *    - يتم تخزين رسائل الأخطاء في الجلسة أيضًا، بحيث يمكن عرضها للمستخدم
-         *    - يمكن الوصول إلى هذه الأخطاء في عرض "البليد" باستخدام متغير $الإيرورس.
-         */
         // $clean_data = $request->validate(Category::rules()); // ميثود الفاليدات هنا برتجع البيانات التى تم فحصها واللى انا محددها, وبالتالى ليس من المفترض كامل البيانات فى الريكوست
         $request->validate(Category::rules(), [
             'required' => 'This Field(:attribute) is required',
             'unique' => 'This Field(:attribute) is Already Exists',
-            'image.max' => 'الصورة التى قمت برفعهاأكبر من 2 ميجابايت' //هذا خاص بانبت تايب فايم, نايم إيميج فقط, وليس كل "ماكس" رول
+            'image.max' => 'الصورة التى قمت برفعهاأكبر من 2 ميجابايت'
         ]);
         /**
          * # Ways to Access to the data in the Request
-         *     - Single Data
-         *      $request->query('name');
-         *      // action="{{route('categories.store')}}?name=x" -> "x" {"only URL" -> 'query string'}
-         *      $request->input('name');
-         *      // action="{{route('categories.store')}}?name=x" -> "x" {take from 'url' and 'post' in the same time, "but" it looks and take from 'url' first}
-         *      $request->get('name');
-         *      // Bring me its value, whether it is in the 'get' or 'post'
-         *      $request->post('name');
-         *      // take value from post request body
-         *      $request->name;
-         *      // The shortcut method
-         *      $request['name'];
-         *      // request is an object which implements "ArrayAccess" So it can be treated as an array
+         *     - [Single Data]
+         *          $request->query('name');
+         *          // action="{{route('categories.store')}}?name=x" -> "x" {"only URL" -> 'query string'}
+         *          $request->input('name');
+         *          // action="{{route('categories.store')}}?name=x" -> "x" {take from 'url' and 'post' in the same time, "but" it looks and take from 'url' first}
+         *          $request->get('name');
+         *          // Bring me its value, whether it is in the 'get' or 'post'
+         *          $request->post('name');
+         *          // take value from post request body
+         *          $request->name;
+         *          // The shortcut method
+         *          $request['name'];
+         *          // request is an object which implements "ArrayAccess" So it can be treated as an array
          *
-         *     - Collection of Data
-         *      $request->all();
-         *      // return array of all input data
-         *      $request->only(['name', 'parent_id']);
-         *      // return array of keys or names which I prompted
-         *      $request->except(['image']);
-         *      // return array of all data except ....
-         *      // we can send "get" and "post" Request in the same time with <form method='post'>
+         *     - [Collection of Data]
+         *          $request->all();
+         *          // return array of all input data
+         *          $request->only(['name', 'parent_id']);
+         *          // return array of keys or names which I prompted
+         *          $request->except(['image']);
+         *          // return array of all data except ....
+         *          // we can send "get" and "post" Request in the same time with <form method='post'>
          */
 
-
         // Request Merge
-        //لو اردنا اضافة داتا على الداتا ريكوست
         $request->merge([
             'slug' => Str::slug($request->post('name'))
         ]);
@@ -132,11 +108,8 @@ class CategoriesController extends Controller
         // dd($data);
         Category::create($data);
         // at the final we must implements "PRG"->'Post Redirect Get', which mean every 'post' request redirect 'get
-        // عشان مثلا لو بعت فورم ولو بيرجعنى مثلا على نفس الصفحة ولو جت وعملت تحديث للصفحة بتظهر لى رسالة ان الفورم هذا هيتم إرساله مرة اخرى
-        // لكن عند تغير الريكوست الى جت فهنا لغينا السيشن هذا واصبحت يعتبر صفحة جديده او بداية جديده
         // return redirect(route('categories.index'));
         return redirect()->route('dashboard.categories.index')->with('success', 'Category created successfully');
-        // الداتا اللى تم ارسالها من خلال الويز بتتخزن فى السيشن بصورة مؤقته وبتبقى موجوده او بتروح على النكست ريكوست وبنمسكها هناك من خلال الاسم اللى اعطيناها لها داخل ويز ميثود
     }
 
     /**
@@ -157,9 +130,10 @@ class CategoriesController extends Controller
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Category $category)
     {
-        //
+        // Route::get('/cate/{$cate}/show', [Category::class,'show]) ---->  public function show(Category $cate){} // Must Same Parameter
+        return view('dashboard.categories.show', ['category' => $category]);
     }
 
     /**
@@ -180,17 +154,12 @@ class CategoriesController extends Controller
             // abort(404);
             return redirect()->route('dashboard.categories.index')->with('info', $e->getMessage());
         }
-        // OR =>
-        // if (!$category) {
-        //     abort(404);
-        // }
 
         // "select * from `categories` where `id` <> ? and (`parent_id` is null or `parent_id` <> ?)"
         $cate_parents = Category::where('id', '<>', $id)
             ->where(function ($query) use ($id) {
                 $query->whereNull('parent_id')->orWhere('parent_id', '<>', $id);
             })->get();
-
 
         return view('dashboard.categories.edit', compact('category', 'cate_parents'));
     }
@@ -235,8 +204,8 @@ class CategoriesController extends Controller
     public function destroy($id)
     {
         $category = Category::findorfail($id);
-        $category->delete(); // make sure category already deleted first (category obj It still keeps the data inside it )
-        // sometimes unexpected errors is returned when handling with sql query
+        $category->delete();  //    make sure category already deleted first (category obj It still keeps the data inside it )
+        //                          sometimes unexpected errors is returned when handling with sql query
         // if ($category->image) {
         //     Storage::disk('public')->delete($category->image);
         // }

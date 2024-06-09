@@ -3,6 +3,7 @@
 use App\Http\Controllers\Dashboard\CategoriesController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\ProductsController;
+use App\Http\Controllers\Dashboard\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -29,5 +30,8 @@ Route::group([
     Route::resource('/categories', CategoriesController::class);
 
     Route::resource('/products', ProductsController::class);
+
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update'); // ['patch'=> with or when no parameter exist in the Route ,'put'=> when parameter is exist]
 });
 //Route::middleware('auth')->as('dashboard')->prefix('dashboard')->group(function () {});

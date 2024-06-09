@@ -24,8 +24,6 @@ class Category extends Model
         return [
 
             // 'name'=> 'unique:table,column,except,id'
-            // لابد ان نستثنى "الاسم" نفسه عند التعديل مثلا, فى حالة لو عاوز اعدل فى الحقول التانية بس هترك اسم الكاتوجرى كما هو, لن تتم عملية التعديل ودائما سيظهر خطأ يقول ان هذا الاسم موجود بالفعل فى الجدول فى عمود "النايم"ك
-
             // 'name' => "required|string|min:3|max:255|unique:categoires,name,$id",
             'name' => [
                 'required',
@@ -33,48 +31,36 @@ class Category extends Model
                 'min:3',
                 'max:255',
                 Rule::unique('categories', 'name')->ignore($id),
-                // لعمل كاستوم رول او رول خاص بنا يوجد 3 طرق
-                /*
-                1- اول طريقة وهى لو الرول هستخدمه هنا على مستوى هذا الفاليداشن وبعد كدا مش هحتاجه عن طريق -> كالباك او كلوشر فانكشن اى ليس لها اسم لكى استدعيها به ولكن اللارافيل هى من ستستدعيها وتمرر لها الاجريومنتس
-                    هذه الفانكشن بتاخد 3 اجريومنت:ك
-                    <input name="name" value=">
-                        - الاتريبيوت : بيمثل إسم الحقل, اى سيكون اسمه دائما "نايم"ك
-                        - الفاليو : هى القمية التى تم إدخالها فى هذا الحقل, اى القيمة التى كانت فى الريكوست
-                        - الفايلز : هى ليست متغير بل كال باك فانكشن لارافيل هتستدعيها عند حدوث المشكلة, وتحتوى على رسالة الخطأ
-                    اما بداخل هذه الفانكشن نكتب اللوجيك المراد تنفيذه
-                */
+
+                // CUSTOM RULE :-      (3 Ways)
+
+                //      1- Closure & anonymous function
                 function ($attribute, $value, $fails) {
                     if (strtolower($value) == 'laravel') {
                         $fails('this name is Forbidden');
                     }
                 },
 
-                /*
-                2- هذه الطريقة ستكون عامة ونقدر نستخدم الرول اللى هنعمله بهذه الطريقة فى اكثر من مكان وليس مقتصر فقط بداخل الملف الذى نعرفه به
-                    > php artisan make:rule Filter          // make Class
-                    - بنضيف لقائمة الرولز هنا اوبجيكت من الرول اللى انشئناه
-                */
+                //      2-  > php artisan make:rule Filter          // make Class
                 new Filter(['php', 'html']),
 
-                /*
-                3- لارافيل اعطت ميزة تسمى نظام "الماكرز" لارافيل فى اغلت الاوبجيكت خاصتها من ضمنها "الفاليداتور" بتخلينا مثلا نزرع ميثود داخل الكلاس بدون ما نعدل على الكلاس وهذا هو نظام الماكروز
-                     وبالطبع هذا الرول ايضا سيكون على مستوى الابليكاشن وبالتالى انسب مكان لكتابته سيكون فى فلدر "البروفايدرز"ك
-                // look => '\app\Providers\AppServiceProvider.php'
 
-                // فى النهاية لو الرول هستخدمه هنا بس ومش هحتاجه الا هنا مثلا يبقى استخدم الطريقة الاولى اما لو ممكن نحتاجه على مستوى الابليكاشن يبقى نستخدم الطريقة التانية والتالته
-                */
+                //      3- ServiceProvider (Global rule)
+                //          look => '\app\Providers\AppServiceProvider.php'
                 'filter:css,js,python'
             ],
+
+
             'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
             'image' => ['image', 'max:1047576', 'dimensions:min_width=100,min_height=100', 'mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg+xml'],
             'status' => 'in:active,archived'
         ];
     }
-    //الاسكوب فكرتها ان لو محتاج انى اطبق اى شئ معين وله علاقة بجملة الاس-كيو-ال
-    // عند تعريف الاسكوب لازم يبدأ او يكون له بداية بريفكس اسمها اسكوب وعند استدعائه يكون بالاسم اللى بعد "إسكوب"ا
-    // الاسكوب دائما بيرجع "بيلدر" اوبجيكت حتى لو ما عرفته او عملت له ديفناشن داخل باراميترز الاسكوب, لكن طبعا يفضل ان يتم تعريفه
-    // \Illuminate\Database\Query\Builder (Scopes always returns Builder Object, Even if I don't pass it on or define it)
 
+
+
+    //                                  [ SCOPES ]
+    // \Illuminate\Database\Query\Builder (Scopes always returns Builder Object, Even if I don't pass it on or define it)
     // ضفت اسم الجدول قبل كل اسم كولوم عشان لو استخدم جملة جوين قبل الاسكوب, تجنبا لبعض الكونفلكتات الغير متوقعه
     public function scopeActive(Builder $builder)
     {
@@ -97,5 +83,26 @@ class Category extends Model
             $builder->where('categories.status', '=', $status);
         }
         // $categories = Category::filter(request()->query())->Paginate(2); // example in controller
+    }
+
+
+    //                                  [ Relationships ]
+
+    public function parent()
+    {
+        return $this->belongsTo(Category::class, 'parent_id', 'id')->withDefault([
+            'name' => '-',
+        ]);
+    }
+
+    public function childern()
+    {
+        return $this->hasMany(Category::class, 'parent_id', 'id');
+    }
+
+
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'category_id', 'id');
     }
 }
